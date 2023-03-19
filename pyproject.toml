@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "emacs-anki-deck"
+version = "0.1.0"
+description = "Emacs functions and their descriptions as an Anki Deck"
+authors = ["George Mauer <gmauer@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "emacs_anki_deck"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+genanki = "0.13.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

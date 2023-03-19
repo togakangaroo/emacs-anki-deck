@@ -1,0 +1,1 @@
+This directly contains generated content. All but this file will be ignored by git.

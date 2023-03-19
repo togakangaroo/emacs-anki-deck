@@ -1,0 +1,60 @@
+
+* Generate Anki
+
+First there's an Anki script to generate a csv of all terms and definitions. This takes me around 10 seconds to run.
+
+#+begin_src emacs-lisp :results silent
+  (require 'cl-lib)
+  (require 'csv)
+  (require 'rx)
+  (require 's)
+  (require 'request)
+
+  (defun gim/entirely-surrounded-by-parens? (str)
+    (s-matches? (rx bol ?\( (0+ anything) ?\) eol) str))
+
+  (defun gim/filter-double-hyphen (sym)
+    "Return non-nil if the symbol SYM is a function and its name doesn't contain a double hyphen."
+    (not (s-contains? "--" (symbol-name sym))))
+
+  (defun gim/get-doc-comment (sym)
+    "Return the doc comment of the function SYM if it exists."
+    (condition-case nil
+        (when-let* ((full-doc (documentation sym))
+                    (doc (s-trim full-doc)))
+          (and (not (s-equals? "Not documented" doc))
+               (not (gim/entirely-surrounded-by-parens? doc))
+               doc))
+      (void-function nil)))
+
+  (defun gim/collect-functions-and-docs ()
+    "Return a list of pairs (function-name . doc-string) for functions without double hyphens."
+    (->> (cl-loop with doc = nil
+                  for sym being the symbols
+                  when (fboundp sym)
+                  when (gim/filter-double-hyphen sym)
+                  when (setq doc (gim/get-doc-comment sym))
+                  collect (cons (symbol-name sym) doc))
+         (--sort (string< (car it) (car other)))))
+
+  (defun gim/csv-quote-field (data)
+    (format "\"%s\"" (s-replace-all
+                      '(("\"" . "\"\"")
+                        ("\n" . "\\n"))
+                      data)))
+
+
+  (defun gim/write-terms-and-definitions-to-csv (alist filename)
+    "Write the contents of ALIST (terms . doc) to filename"
+    (with-temp-buffer
+      (-each alist (-lambda ((term . docs))
+                      (insert (format "%s, %s\n" (gim/csv-quote-field term) (gim/csv-quote-field docs)))))
+      (write-file filename)))
+
+  (gim/write-terms-and-definitions-to-csv (gim/collect-functions-and-docs) "output/terms-definitions.csv")
+#+end_src
+
+* Setup
+#+begin_src emacs-lisp :results silent
+  (async-shell-command "pyenv exec poetry install")
+#+end_src
