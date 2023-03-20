@@ -124,3 +124,5 @@ Then import into anki (this is on macos)
   open /Applications/Anki.app output/emacs-terms-and-definitions.apkg
 #+end_src
 
+* Future work
+Parse through the tutorial or the Mastering Emacs book for functions that are mentioned and order these functions with those first.
