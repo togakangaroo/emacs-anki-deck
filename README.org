@@ -1,3 +1,6 @@
+This is my first project using ChatGPT as a significant coding assistant
+
+This is an org file. It is best viewed with emacs but you can view it in raw mode on github or any text editor. The code runs in emacs with basic org-mode set up (tested with spacemacs).
 
 * Generate Anki
 
@@ -54,7 +57,70 @@ First there's an Anki script to generate a csv of all terms and definitions. Thi
   (gim/write-terms-and-definitions-to-csv (gim/collect-functions-and-docs) "output/terms-definitions.csv")
 #+end_src
 
-* Setup
+ChatGPT got me starated but the above required about 60 minutes of rewriting and debugging.
+
+* Generate Anki Deck
+
+Set up your python venv by running a poetry install (this assumes you have pyenv with poetry installed in it, otherwise setup the poetry venv how you normally would).
+
 #+begin_src emacs-lisp :results silent
   (async-shell-command "pyenv exec poetry install")
 #+end_src
+
+#+begin_src python :python "pyenv exec poetry run python" :results silent
+  from csv import reader, QUOTE_ALL
+  import genanki
+
+  deck_id = 4538789202339
+
+  def _read_csv(file_path):
+      terms = []
+      with open(file_path, mode='r') as csvfile:
+          rd = reader(csvfile, quotechar='"', delimiter=',', quoting=QUOTE_ALL, skipinitialspace=True)
+          for term, definition in rd:
+              terms.append((term, definition))
+      return terms
+
+  def _escape_for_anki(string):
+      # This character causes problems when imported into anki. Escape it.
+      return string.replace('\x1f', '\\x1f')
+
+  def create_anki_deck(terms):
+      my_model = genanki.Model(
+          deck_id,
+          'Terms and Definitions',
+          fields=[
+              {'name': 'Term'},
+              {'name': 'Definition'},
+          ],
+          templates=[
+              {
+                  'name': 'Term to Definition',
+                  'qfmt': '{{Term}}',
+                  'afmt': '{{FrontSide}}<hr id="answer">{{Definition}}',
+              },
+          ])
+
+      deck = genanki.Deck(
+          deck_id,
+          'Emacs Functions and Definitions')
+
+      for term, definition in terms:
+          note = genanki.Note(
+              model=my_model,
+              fields=[term, _escape_for_anki(definition)])
+          deck.add_note(note)
+
+      genanki.Package(deck).write_to_file('output/emacs-terms-and-definitions.apkg')
+
+  csv_file_path = 'output/terms-definitions.csv'
+  terms = _read_csv(csv_file_path)
+  create_anki_deck(terms)
+#+end_src
+
+Then import into anki (this is on macos)
+
+#+begin_src shell :results silent
+  open /Applications/Anki.app output/emacs-terms-and-definitions.apkg
+#+end_src
+
