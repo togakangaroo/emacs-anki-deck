@@ -1,3 +1,5 @@
+A way of genrating an anki flashcard deck for the definition of every Emacs function.
+
 This is my first project using ChatGPT as a significant coding assistant
 
 This is an org file. It is best viewed with emacs but you can view it in raw mode on github or any text editor. The code runs in emacs with basic org-mode set up (tested with spacemacs).
